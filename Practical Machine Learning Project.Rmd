@@ -1,0 +1,105 @@
+---
+title: "Practical Machine Learning Project"
+output: html_document
+---
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+## Loading Data
+
+We read in both the training data and the testing data from the weblink:
+
+```{r}
+setwd("C:\\Users\\Joel\\Desktop\\MOOC Course\\practicalmachinelearning")
+traindata <- read.csv("pml-training.csv")
+testdata <- read.csv("pml-testing.csv")
+```
+
+## Data Exploration
+
+We carry out some data exploration on the data. The training data has 19622 rows and 160 columns and the testing data has 20 rows and 160 columns. Not all the columns are needed so we have to carry out data cleaning. 
+```{r}
+dim(traindata)
+dim(testdata)
+```
+
+
+We plotted the classe variable in the training set. The "A" value was the most frequent, with more than 5,000 observations. 
+```{r}
+plot(traindata$classe)
+```
+
+## Data Cleaning
+
+We perform the following functions for both the training and the testing data:
+
+* Change the values with #DIV/0! to a NA value
+* Change values with na word to a NA value
+* Remove columns with NA values
+* Remove the first 6 columns which are redundant
+
+```{r}
+traindata[traindata=="#DIV/0!"] <- NA # change values with #DIV/0! to NA value
+traindata[traindata=="na"] <- NA # changes values with na word to NA value
+traindata <- traindata[,colSums(is.na(traindata))==0] # remove columns with NA values
+traindata <- traindata[,7:ncol(traindata)] # remove the first 6 columns which are redundant
+
+testdata[testdata=="#DIV/0!"] <- NA # change values with #DIV/0! to NA value
+testdata[testdata=="na"] <- NA # changes values with na word to NA value
+testdata <- testdata[,colSums(is.na(testdata))==0] # remove columns with NA values
+testdata <- testdata[,7:ncol(testdata)] # remove the first 6 columns which are redundant
+```
+
+## Cross Validation
+
+We split the Training Data into 2 parts: A training parition consisting of 75% of the original training data and a testing partition consisting of 25% of the original training data.
+
+```{r, message=FALSE, warning=FALSE}
+library(caret)
+set.seed(32323)
+inTrain <- createDataPartition(y=traindata$classe, p=0.75, list=FALSE)
+trainpart <- traindata[inTrain,]
+testpart <- traindata[-inTrain,]
+```
+
+## Model Selection
+
+We try out 2 models - Linear Discriminant Analysis and Random Forest model to see which has better prediction
+
+###Linear Discriminant Analysis
+
+```{r}
+modelLDA <- train(classe ~., method="lda", data=trainpart)
+predictionlda <- predict(modelLDA, testpart)
+confusionMatrix(predictionlda, testpart$classe)
+```
+
+As shown above, the accuracy for the Linear Discriminant model is 70.6%.
+
+###Random Forest Model
+
+```{r}
+library(randomForest)
+modelRF <- randomForest(classe~.,data=trainpart)
+predictionrf <- predict(modelRF, testpart)
+confusionMatrix(predictionrf, testpart$classe)
+```
+
+As shown above, the accuracy for the Random Forest model is 99.7%. This shows that the Random Forest model is more accurate than the Linear Discriminant Analysis model. Hence, we choose to use the Random Forest model. 
+
+## Write to File
+
+As required, we apply the Random Forest model to the 20 test cases in the test data and write it to a text file.
+```{r}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+predictionrf <- predict(modelRF, testdata)
+pml_write_files(predictionrf)
+```
