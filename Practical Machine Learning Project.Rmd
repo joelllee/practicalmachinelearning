@@ -87,7 +87,7 @@ predictionrf <- predict(modelRF, testpart)
 confusionMatrix(predictionrf, testpart$classe)
 ```
 
-As shown above, the accuracy for the Random Forest model is 99.7%. This shows that the Random Forest model is more accurate than the Linear Discriminant Analysis model. Hence, we choose to use the Random Forest model. 
+As shown above, the accuracy for the Random Forest model is 99.7%. This shows that the Random Forest model is more accurate than the Linear Discriminant Analysis model. The out of sample error is 0.3% which is considered to be low. Hence, we choose to use the Random Forest model. 
 
 ## Write to File
 
